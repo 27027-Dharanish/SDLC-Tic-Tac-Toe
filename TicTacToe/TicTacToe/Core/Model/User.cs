@@ -8,26 +8,25 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="User"/> class with specified user details.
         /// </summary>
-        /// <param name="id">The unique identifier for the user. A new <see cref="Guid"/> is generated if <see cref="Guid.Empty"/> is passed.</param>
         /// <param name="name">The username for the account.</param>
         /// <param name="password">The password for the account.</param>
         /// <param name="dateOfBirth">The user's date of birth.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> or <paramref name="password"/> is <see langword="null"/>.</exception>
-        public User(Guid id, string name, string password, DateOnly dateOfBirth)
+        public User(string name, string password, DateOnly dateOfBirth)
         {
-            this.UserId = id == Guid.Empty ? Guid.NewGuid() : id;
-            this.UserName = name ?? throw new ArgumentNullException(nameof(name));
-            this.Password = password ?? throw new ArgumentNullException(nameof(password));
+            this.UserId = Guid.NewGuid();
+            this.UserName = name;
+            this.Password = password;
             this.Age = dateOfBirth;
         }
 
         /// <summary>
-        /// Gets or sets the user id.
+        /// Gets the user id.
         /// </summary>
         /// <value>
         /// User unique id.
         /// </value>
-        public Guid UserId { get; set; }
+        public Guid UserId { get; init; }
 
         /// <summary>
         /// Gets or sets the user name.
