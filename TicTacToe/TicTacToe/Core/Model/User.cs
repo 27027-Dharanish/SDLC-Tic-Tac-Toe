@@ -1,10 +1,23 @@
-﻿namespace TicTacToe.Core.Model
+﻿using System;
+using System.Text.Json.Serialization;
+
+namespace TicTacToe.Core.Model
 {
     /// <summary>
     /// Serves as the foundational entity for all user records.
     /// </summary>
     public class User
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="User"/> class for JSON deserialization.
+        /// </summary>
+        [JsonConstructor]
+        public User()
+        {
+            this.UserName = string.Empty;
+            this.Password = string.Empty;
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="User"/> class with specified user details.
         /// </summary>
@@ -15,8 +28,8 @@
         public User(string name, string password, DateOnly dateOfBirth)
         {
             this.UserId = Guid.NewGuid();
-            this.UserName = name;
-            this.Password = password;
+            this.UserName = name ?? throw new ArgumentNullException(nameof(name));
+            this.Password = password ?? throw new ArgumentNullException(nameof(password));
             this.Age = dateOfBirth;
         }
 

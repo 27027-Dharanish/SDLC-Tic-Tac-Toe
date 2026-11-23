@@ -108,7 +108,7 @@ namespace TicTacToe.Core.Repository
         /// <returns><c>true</c> if the user was found and deleted; otherwise, <c>false</c>.</returns>
         public bool Delete(Guid userId)
         {
-            List<User> users = GetAll();
+            List<User> users = this.GetAll();
             User? existing = users.FirstOrDefault(u => u.UserId == userId);
 
             if (existing == null)

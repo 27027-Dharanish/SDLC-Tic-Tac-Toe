@@ -1,10 +1,18 @@
-﻿namespace Assignments
+﻿using TicTacToe.Controller;
+using TicTacToe.Core.Repository;
+using TicTacToe.Core.Services;
+
+namespace Assignments
 {
-    internal class Program
+    public class Program
     {
-        static void Main(string[] args)
+        
+        public static void Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            IUserRepository userRepository = new UserRepository();
+            IUserManagementService userService = new UserService(userRepository);
+            UserController controller = new UserController(userService);
+            controller.Start();
         }
     }
 }

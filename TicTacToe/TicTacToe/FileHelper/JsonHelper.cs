@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using TicTacToe.Helper;
 
 namespace TicTacToe.Core.Helpers
 {
@@ -16,6 +19,7 @@ namespace TicTacToe.Core.Helpers
         {
             WriteIndented = true,
             PropertyNameCaseInsensitive = true,
+            Converters = { new DateOnlyJsonConverter() },
         };
 
         /// <summary>
