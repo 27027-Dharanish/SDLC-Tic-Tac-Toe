@@ -85,7 +85,7 @@ namespace TicTacToe.View
             return AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .Title(title)
-                    .PageSize(10)
+                    .PageSize(3)
                     .MoreChoicesText("[grey](Move up and down to reveal more options)[/]")
                     .HighlightStyle(new Style(Color.Cyan1, decoration: Decoration.Bold))
                     .AddChoices(options));

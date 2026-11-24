@@ -1,5 +1,4 @@
-﻿using System;
-using TicTacToe.Core.Model;
+﻿using TicTacToe.Core.Model;
 using TicTacToe.Core.Services;
 using TicTacToe.View;
 
@@ -7,7 +6,6 @@ namespace TicTacToe.Controller
 {
     /// <summary>
     /// Handles console user interactions for authentication and routes valid sessions to the game flow.
-    /// Acts as the intermediary between <see cref="ConsoleActivity"/> and <see cref="IUserManagementService"/>.
     /// </summary>
     public class UserController
     {
@@ -20,25 +18,23 @@ namespace TicTacToe.Controller
         /// <summary>
         /// Initializes a new instance of the <see cref="UserController"/> class.
         /// </summary>
-        /// <param name="userService">The user management service handling business logic.</param>
+        /// <param name="userService">The user management service handling user business logic.</param>
         public UserController(IUserManagementService userService)
         {
-            this._userService = userService ?? throw new ArgumentNullException(nameof(userService));
+            this._userService = userService;
         }
 
         /// <summary>
-        /// Starts the authentication menu loop using arrow-key selection.
+        /// Starts the authentication menu..
         /// </summary>
         public void Start()
         {
             while (true)
             {
                 ConsoleActivity.ShowHeader("AUTHENTICATION", "TIC TAC TOE");
-
                 string choice = ConsoleActivity.ShowSelectionMenu(
                     "[bold cyan]Select an option using Up/Down arrow keys:[/]",
                     new[] { OptionSignUp, OptionLogin, OptionExit });
-
                 switch (choice)
                 {
                     case OptionSignUp:
@@ -57,8 +53,7 @@ namespace TicTacToe.Controller
         }
 
         /// <summary>
-        /// Collects and validates registration inputs immediately via <see cref="InputValidator"/>,
-        /// then delegates user creation to <see cref="IUserManagementService"/>.
+        /// Collects and validates registration inputs immediately.
         /// </summary>
         private void HandleSignUp()
         {
