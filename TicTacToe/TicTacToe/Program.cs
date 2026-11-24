@@ -10,8 +10,9 @@ namespace Assignments
         public static void Main(string[] args)
         {
             IUserRepository userRepository = new UserRepository();
+            GameController gameController = new GameController();
             IUserManagementService userService = new UserService(userRepository);
-            UserController controller = new UserController(userService);
+            UserController controller = new UserController(userService, gameController);
             controller.Start();
         }
     }

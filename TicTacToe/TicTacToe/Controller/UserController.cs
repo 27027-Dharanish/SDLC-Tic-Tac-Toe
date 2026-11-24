@@ -13,15 +13,17 @@ namespace TicTacToe.Controller
         private const string OptionLogin = "Login";
         private const string OptionExit = "Exit";
         private readonly IUserManagementService _userService;
-        // private readonly GameController _gameController;
+        private readonly GameController _gameController;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserController"/> class.
         /// </summary>
         /// <param name="userService">The user management service handling user business logic.</param>
-        public UserController(IUserManagementService userService)
+        /// <param name="gameController">The user management handling user business logic.</param>
+        public UserController(IUserManagementService userService, GameController gameController)
         {
             this._userService = userService;
+            this._gameController = gameController;
         }
 
         /// <summary>
@@ -99,8 +101,8 @@ namespace TicTacToe.Controller
                 }
 
                 ConsoleActivity.PrintSuccessMessage($"Welcome back, {userData.UserName}!");
-                // this._gameController.SetCurrentUser(userData);
-                // this._gameController.Start();
+                this._gameController.SetCurrentUser(userData);
+                this._gameController.Start();
             }
             catch (Exception ex)
             {
