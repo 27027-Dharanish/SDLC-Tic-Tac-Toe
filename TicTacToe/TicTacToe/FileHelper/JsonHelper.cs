@@ -48,7 +48,7 @@ namespace TicTacToe.Core.Helpers
         /// <summary>
         /// Reads a JSON file and deserializes its content into the specified type.
         /// </summary>
-        /// <typeparam name="T">Type of the data to be written.</typeparam>
+        /// <typeparam name="T">Type of the data to be written in the file.</typeparam>
         /// <param name="filePath">Actual file path.</param>
         /// <returns>The content from the file.</returns>
         public static T DeserializeFromFile<T>(string filePath)

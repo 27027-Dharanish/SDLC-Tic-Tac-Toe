@@ -1,6 +1,7 @@
 ﻿using Spectre.Console;
 using TicTacToe.Core.Constants;
 using TicTacToe.Core.Model;
+using TicTacToe.Core.Service;
 using TicTacToe.View;
 
 namespace TicTacToe.Controller
@@ -19,7 +20,17 @@ namespace TicTacToe.Controller
         private const string ModeImpossible = "Impossible (AI - Unbeatable)";
         private const string ModeManual = "Manual (2 Players)";
         private const string ModeBack = "Back to Lobby";
+        private readonly GameService _gameService;
         private User? _currentUser;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="GameController"/> class with default service instances.
+        /// </summary>
+        /// <param name="service">d</param>
+        public GameController(GameService service)
+        {
+            this._gameService = service;
+        }
 
         /// <summary>
         /// Sets the currently authenticated user for the active game session.
@@ -98,21 +109,27 @@ namespace TicTacToe.Controller
             switch (selectedMode)
             {
                 case ModeEasy:
-                    this.StartMatch(GameMode.Easy);
                     EasyGameController controller = new EasyGameController();
                     controller.StartMatch(this._currentUser!);
                     break;
 
                 case ModeMedium:
-                    this.StartMatch(GameMode.Medium);
+                    EasyAiService easyAiService = new EasyAiService();
+                    HardAiService hardAiService = new HardAiService();
+                    MediumAiService mediumAiService = new MediumAiService(easyAiService, hardAiService);
+                    MediumModeController mediumModeController = new MediumModeController(mediumAiService, this._gameService);
+                    mediumModeController.StartMatch(this._currentUser!);
                     break;
-
                 case ModeImpossible:
-                    this.StartMatch(GameMode.Impossible);
+                    HardAiService service = new HardAiService();
+                    HardModeController controller1 = new HardModeController(service, this._gameService);
+                    controller1.StartMatch(this._currentUser!);
                     break;
 
                 case ModeManual:
-                    this.StartMatch(GameMode.Manual);
+                    ManualGameService manualGameService = new ManualGameService();
+                    ManualModeController manualModeController = new ManualModeController(manualGameService, this._gameService);
+                    manualModeController.StartMatch(this._currentUser!);
                     break;
 
                 case ModeBack:
@@ -137,10 +154,10 @@ namespace TicTacToe.Controller
         /// </summary>
         private void HandleWatchReplay()
         {
-            ConsoleActivity.ShowHeader("WATCH REPLAY");
-            ConsoleActivity.PrintInConsole("[yellow]Loading saved replays...[/]");
-            ConsoleActivity.WaitInConsole();
+            ReplayController replayController = new ReplayController(this._gameService);
+            replayController.StartReplayMenu(this._currentUser!);
         }
+
 
         /// <summary>
         /// Clears the active user session and returns to the authentication menu.

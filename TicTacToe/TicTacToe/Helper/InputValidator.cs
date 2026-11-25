@@ -6,13 +6,12 @@ using Spectre.Console;
 namespace TicTacToe.View
 {
     /// <summary>
-    /// Provides immediate console input validation helpers using Spectre.Console prompts.
-    /// Ensures input format and basic field constraints are valid at entry time.
+    /// Provides console input validation.
     /// </summary>
     public static class InputValidator
     {
         /// <summary>
-        /// Prompts for and validates a username (3–20 characters, letters, numbers, and underscores only).
+        /// Prompt for the user name and validate it.
         /// </summary>
         /// <param name="prompt">The prompt message displayed to the user.</param>
         /// <returns>A validated, trimmed username string.</returns>
@@ -34,6 +33,10 @@ namespace TicTacToe.View
                         {
                             return ValidationResult.Error("[red]Username must be between 3 and 20 characters.[/]");
                         }
+                        else if (trimmed.All(char.IsDigit))
+                        {
+                            return ValidationResult.Error("[red]Username must contain some alphabets.[/]");
+                        }
 
                         if (!Regex.IsMatch(trimmed, @"^[a-zA-Z0-9_]+$"))
                         {
@@ -46,7 +49,7 @@ namespace TicTacToe.View
         }
 
         /// <summary>
-        /// Prompts for and validates a password (minimum 4 characters, no spaces).
+        /// Prompts for and validates a password..
         /// </summary>
         /// <param name="prompt">The prompt message displayed to the user.</param>
         /// <returns>A validated password string.</returns>
@@ -63,13 +66,11 @@ namespace TicTacToe.View
                         {
                             return ValidationResult.Error("[red]Password cannot be empty.[/]");
                         }
-
-                        if (input.Length < 4)
+                        else if (input.Length < 4)
                         {
                             return ValidationResult.Error("[red]Password must be at least 4 characters long.[/]");
                         }
-
-                        if (input.Contains(' '))
+                        else if (input.Contains(' '))
                         {
                             return ValidationResult.Error("[red]Password cannot contain spaces.[/]");
                         }
@@ -103,26 +104,28 @@ namespace TicTacToe.View
         }
 
         /// <summary>
-        /// Prompts for and validates a date of birth in <c>yyyy-MM-dd</c> format, ensuring it is a valid past date.
+        /// Prompts for and validates a date of birth.
         /// </summary>
         /// <param name="prompt">The prompt message displayed to the user.</param>
-        /// <returns>A validated <see cref="DateOnly"/> value.</returns>
-        public static DateOnly GetValidatedDateOfBirth(string prompt = "[cyan]Enter date of birth ([yellow]yyyy-MM-dd[/]):[/]")
+        /// <returns>A validated date value.</returns>
+        public static DateOnly GetValidatedDateOfBirth(string prompt = "[cyan]Enter date of birth ([yellow]dd-MM-yyyy[/]):[/]")
         {
             ConsoleActivity.PrintEmptyLine();
-            string rawDate = AnsiConsole.Prompt(
+            DateOnly validatedDate = default;
+
+            AnsiConsole.Prompt(
                 new TextPrompt<string>(prompt)
                     .PromptStyle("green")
                     .Validate(input =>
                     {
                         if (!DateOnly.TryParseExact(
                             input.Trim(),
-                            "yyyy-MM-dd",
+                            "dd-MM-yyyy",
                             CultureInfo.InvariantCulture,
                             DateTimeStyles.None,
                             out DateOnly parsedDate))
                         {
-                            return ValidationResult.Error("[red]Invalid format. Use yyyy-MM-dd (e.g., 2002-08-15).[/]");
+                            return ValidationResult.Error("[red]Invalid format. Use dd-MM-yyyy (e.g., 19-02-2006).[/]");
                         }
 
                         DateOnly today = DateOnly.FromDateTime(DateTime.Today);
@@ -131,15 +134,23 @@ namespace TicTacToe.View
                             return ValidationResult.Error("[red]Date of birth must be in the past.[/]");
                         }
 
+                        if (parsedDate > today.AddYears(-7))
+                        {
+                            return ValidationResult.Error("[red]You must be at least 7 years old to play this game.[/]");
+                        }
+
                         if (parsedDate < today.AddYears(-120))
                         {
                             return ValidationResult.Error("[red]Please enter a realistic date of birth.[/]");
                         }
 
+                        validatedDate = parsedDate;
                         return ValidationResult.Success();
                     }));
 
-            return DateOnly.ParseExact(rawDate.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture);
+            return validatedDate;
         }
+
+
     }
 }
