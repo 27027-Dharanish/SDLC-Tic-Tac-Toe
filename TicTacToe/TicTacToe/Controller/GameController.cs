@@ -109,7 +109,8 @@ namespace TicTacToe.Controller
             switch (selectedMode)
             {
                 case ModeEasy:
-                    EasyGameController controller = new EasyGameController();
+                    EasyAiService easyAiService1 = new EasyAiService();
+                    EasyGameController controller = new EasyGameController(easyAiService1, this._gameService);
                     controller.StartMatch(this._currentUser!);
                     break;
 
@@ -157,7 +158,6 @@ namespace TicTacToe.Controller
             ReplayController replayController = new ReplayController(this._gameService);
             replayController.StartReplayMenu(this._currentUser!);
         }
-
 
         /// <summary>
         /// Clears the active user session and returns to the authentication menu.

@@ -118,7 +118,7 @@ namespace TicTacToe.View
         public static void PrintInvalidMessage(string content)
         {
             PrintEmptyLine();
-            var panel = new Panel($"[bold red]✖ {Markup.Escape(content)}[/]")
+            var panel = new Panel($"[bold red] {Markup.Escape(content)}[/]")
             {
                 Border = BoxBorder.Rounded,
                 BorderStyle = new Style(Color.Red),
@@ -134,7 +134,7 @@ namespace TicTacToe.View
         public static void PrintSuccessMessage(string content)
         {
             PrintEmptyLine();
-            var panel = new Panel($"[bold green]✔ {Markup.Escape(content)}[/]")
+            var panel = new Panel($"[bold green] {Markup.Escape(content)}[/]")
             {
                 Border = BoxBorder.Rounded,
                 BorderStyle = new Style(Color.Green),
@@ -200,5 +200,99 @@ namespace TicTacToe.View
             AnsiConsole.Write(Align.Center(panel));
             WaitInConsole();
         }
+
+        /// <summary>
+        /// Displays an arrow-key move selection menu that also supports pressing <c>Q</c> to quit the match
+        /// after user confirmation.
+        /// </summary>
+        /// <param name="title">The prompt title displayed above the choices.</param>
+        /// <param name="moveChoices">The available position choices (e.g., <c>"Position 1"</c>).</param>
+        /// <returns>The chosen move string, or <see langword="null"/> if the player confirmed quitting.</returns>
+        public static string? ShowMoveSelectionMenu(string title, string[] moveChoices)
+        {
+            const string quitOption = "[red][[Q]] Quit Match[/]";
+            var allChoices = moveChoices.Append(quitOption).ToList();
+
+            while (true)
+            {
+                int selectedIndex = 0;
+
+                // Render interactive menu with live Q-key detection
+                while (true)
+                {
+                    AnsiConsole.MarkupLine(title);
+                    AnsiConsole.MarkupLine("[dim grey](Use Up/Down arrows + Enter to place, or press Q to quit)[/]");
+
+                    for (int i = 0; i < allChoices.Count; i++)
+                    {
+                        if (i == selectedIndex)
+                        {
+                            AnsiConsole.MarkupLine($"  [bold cyan]> {allChoices[i]}[/]");
+                        }
+                        else
+                        {
+                            AnsiConsole.MarkupLine($"    {allChoices[i]}");
+                        }
+                    }
+
+                    ConsoleKeyInfo keyInfo = Console.ReadKey(intercept: true);
+
+                    // Move cursor back up to redraw cleanly
+                    int linesToClear = allChoices.Count + 2;
+                    Console.SetCursorPosition(0, Math.Max(0, Console.CursorTop - linesToClear));
+
+                    if (keyInfo.Key == ConsoleKey.UpArrow)
+                    {
+                        selectedIndex = (selectedIndex - 1 + allChoices.Count) % allChoices.Count;
+                    }
+                    else if (keyInfo.Key == ConsoleKey.DownArrow)
+                    {
+                        selectedIndex = (selectedIndex + 1) % allChoices.Count;
+                    }
+                    else if (keyInfo.Key == ConsoleKey.Q)
+                    {
+                        // Clear menu lines before showing confirmation
+                        ClearMenuLines(linesToClear);
+                        if (ConfirmAction("[bold red]Are you sure you want to quit this match?[/]"))
+                        {
+                            return null;
+                        }
+
+                        break; // Re-render menu if user chose No
+                    }
+                    else if (keyInfo.Key == ConsoleKey.Enter)
+                    {
+                        ClearMenuLines(linesToClear);
+                        string chosen = allChoices[selectedIndex];
+
+                        if (chosen == quitOption)
+                        {
+                            if (ConfirmAction("[bold red]Are you sure you want to quit this match?[/]"))
+                            {
+                                return null;
+                            }
+
+                            break; // Re-render menu if user chose No
+                        }
+
+                        return chosen;
+                    }
+                }
+            }
+        }
+
+        private static void ClearMenuLines(int lineCount)
+        {
+            int startTop = Console.CursorTop;
+            string blankLine = new string(' ', Console.WindowWidth > 0 ? Console.WindowWidth - 1 : 80);
+            for (int i = 0; i < lineCount; i++)
+            {
+                Console.SetCursorPosition(0, startTop + i);
+                Console.Write(blankLine);
+            }
+
+            Console.SetCursorPosition(0, startTop);
+        }
+
     }
 }

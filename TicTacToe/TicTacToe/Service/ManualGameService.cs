@@ -56,7 +56,6 @@ namespace TicTacToe.Core.Service
                 int a = WinningCombinations[i, 0];
                 int b = WinningCombinations[i, 1];
                 int c = WinningCombinations[i, 2];
-
                 if (char.ToUpperInvariant(board[a]) == target &&
                     char.ToUpperInvariant(board[b]) == target &&
                     char.ToUpperInvariant(board[c]) == target)

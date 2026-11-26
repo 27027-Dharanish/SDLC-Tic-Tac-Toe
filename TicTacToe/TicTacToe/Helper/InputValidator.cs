@@ -74,6 +74,14 @@ namespace TicTacToe.View
                         {
                             return ValidationResult.Error("[red]Password cannot contain spaces.[/]");
                         }
+                        else if (!input.Any(char.IsUpper))
+                        {
+                            return ValidationResult.Error("[red]Password must contain atleast one uppercase letter.[/]");
+                        }
+                        else if (!input.Any(char.IsDigit))
+                        {
+                            return ValidationResult.Error("[red]Password must contain atleast one digit.[/]");
+                        }
 
                         return ValidationResult.Success();
                     }));
@@ -150,7 +158,5 @@ namespace TicTacToe.View
 
             return validatedDate;
         }
-
-
     }
 }

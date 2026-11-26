@@ -25,29 +25,20 @@ namespace TicTacToe.Controller
         private int _draws;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="EasyGameController"/> class with default service instances.
+        /// Initializes a new instance of the <see cref="EasyGameController"/> class.
         /// </summary>
-        public EasyGameController()
-            : this(new EasyAiService(), new GameService())
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EasyGameController"/> class with the specified AI and game services.
-        /// </summary>
-        /// <param name="easyAiService">The service providing the Easy AI move algorithm.</param>
+        /// <param name="easyAiService">The service providing the Easy computer move.</param>
         /// <param name="gameService">The service responsible for saving and managing match records.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="easyAiService"/> or <paramref name="gameService"/> is <see langword="null"/>.</exception>
         public EasyGameController(EasyAiService easyAiService, GameService gameService)
         {
-            this._easyAiService = easyAiService ?? throw new ArgumentNullException(nameof(easyAiService));
-            this._gameService = gameService ?? throw new ArgumentNullException(nameof(gameService));
+            this._easyAiService = easyAiService;
+            this._gameService = gameService;
         }
 
         /// <summary>
-        /// Starts the Easy mode session and manages the replay loop.
+        /// Starts the Easy mode session..
         /// </summary>
-        /// <param name="currentUser">Refer the current user information.</param>
+        /// <param name="currentUser">The current user information.</param>
         public void StartMatch(User currentUser)
         {
             if (currentUser == null)
@@ -56,7 +47,6 @@ namespace TicTacToe.Controller
             }
 
             this.ResetScoreboard();
-
             try
             {
                 string choice;
@@ -81,11 +71,9 @@ namespace TicTacToe.Controller
         private void PlaySingleRound(User currentUser)
         {
             char userSymbol = this.PromptUserSymbolChoice(currentUser.UserName);
-            char aiSymbol = userSymbol == 'X' ? 'O' : 'X';
-
+            char computerSymbol = userSymbol == 'X' ? 'O' : 'X';
             string player1Name = userSymbol == 'X' ? currentUser.UserName : ComputerName;
             string player2Name = userSymbol == 'O' ? currentUser.UserName : ComputerName;
-
             char[] board = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
             var moveHistory = new List<int>();
             char currentTurn = 'X';
@@ -93,28 +81,32 @@ namespace TicTacToe.Controller
 
             while (true)
             {
-                this.RenderBoardWithScoreboard(board, currentUser.UserName, userSymbol, aiSymbol, currentTurn);
-
+                this.RenderBoardWithScoreboard(board, currentUser.UserName, userSymbol, computerSymbol, currentTurn);
                 int chosenPosition;
                 if (currentTurn == userSymbol)
                 {
-                    chosenPosition = this.GetUserMove(board);
+                    int? userMove = this.GetUserMove(board);
+                    if (userMove == null)
+                    {
+                        ConsoleActivity.PrintInvalidMessage("Match quit. Returning to mode menu...");
+                        return;
+                    }
+
+                    chosenPosition = userMove.Value;
                 }
                 else
                 {
-                    ConsoleActivity.PrintInConsole($"[yellow]{ComputerName} ({aiSymbol}) is thinking...[/]");
+                    ConsoleActivity.PrintInConsole($"[yellow]{ComputerName} ({computerSymbol}) is thinking...[/]");
                     Thread.Sleep(500);
                     chosenPosition = this._easyAiService.GetNextMove(board, userSymbol);
                 }
 
                 board[chosenPosition - 1] = currentTurn;
                 moveHistory.Add(chosenPosition);
-
                 if (this._easyAiService.CheckWin(board, currentTurn))
                 {
                     bool userWon = currentTurn == userSymbol;
                     winnerName = userWon ? currentUser.UserName : ComputerName;
-
                     if (userWon)
                     {
                         this._userWins++;
@@ -124,15 +116,14 @@ namespace TicTacToe.Controller
                         this._computerWins++;
                     }
 
-                    this.RenderBoardWithScoreboard(board, currentUser.UserName, userSymbol, aiSymbol, currentTurn);
-
+                    this.RenderBoardWithScoreboard(board, currentUser.UserName, userSymbol, computerSymbol, currentTurn);
                     if (userWon)
                     {
                         ConsoleActivity.PrintSuccessMessage($"Congratulations {currentUser.UserName}! You won the match!");
                     }
                     else
                     {
-                        ConsoleActivity.PrintInvalidMessage($"{ComputerName} ({aiSymbol}) won the match!");
+                        ConsoleActivity.PrintInvalidMessage($"{ComputerName} ({computerSymbol}) won the match!");
                     }
 
                     break;
@@ -142,7 +133,7 @@ namespace TicTacToe.Controller
                 {
                     winnerName = "Draw";
                     this._draws++;
-                    this.RenderBoardWithScoreboard(board, currentUser.UserName, userSymbol, aiSymbol, currentTurn);
+                    this.RenderBoardWithScoreboard(board, currentUser.UserName, userSymbol, computerSymbol, currentTurn);
                     ConsoleActivity.PrintSuccessMessage("The match ended in a Draw!");
                     break;
                 }
@@ -159,7 +150,10 @@ namespace TicTacToe.Controller
                 moveHistory.ToArray());
         }
 
-        private void ResetScoreboard() => this._userWins = this._computerWins = this._draws = 0;
+        private void ResetScoreboard()
+        {
+            this._userWins = this._computerWins = this._draws = 0;
+        }
 
         private char PromptUserSymbolChoice(string userName)
         {
@@ -171,16 +165,21 @@ namespace TicTacToe.Controller
             return choice == SymbolOptionX ? 'X' : 'O';
         }
 
-        private int GetUserMove(char[] board)
+        private int? GetUserMove(char[] board)
         {
             string[] choices = this._easyAiService
                 .GetAvailablePositions(board)
                 .Select(pos => $"Position {pos}")
                 .ToArray();
 
-            string selected = ConsoleActivity.ShowSelectionMenu(
+            string? selected = ConsoleActivity.ShowMoveSelectionMenu(
                 "[bold green]Your turn! Select an available cell:[/]",
                 choices);
+
+            if (selected == null)
+            {
+                return null;
+            }
 
             return int.Parse(selected.Replace("Position ", string.Empty));
         }

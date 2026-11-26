@@ -105,7 +105,9 @@ namespace TicTacToe.Core.Service
         public List<GameRecord> GetUserMatchHistory(Guid userId)
         {
             if (userId == Guid.Empty)
-            { throw new ArgumentException("User ID cannot be empty.", nameof(userId)); }
+            {
+                throw new ArgumentException("User ID cannot be empty.", nameof(userId));
+            }
 
             return this._gameRepository.GetGamesByUserId(userId);
         }
@@ -120,7 +122,9 @@ namespace TicTacToe.Core.Service
         public List<GameRecord> GetUserMatchHistoryByMode(Guid userId, GameMode mode)
         {
             if (userId == Guid.Empty)
-            { throw new ArgumentException("User ID cannot be empty.", nameof(userId)); }
+            {
+                throw new ArgumentException("User ID cannot be empty.", nameof(userId));
+            }
 
             return this._gameRepository.GetGamesByUserIdAndMode(userId, mode);
         }
@@ -134,7 +138,9 @@ namespace TicTacToe.Core.Service
         public GameRecord? GetMatchForReplay(Guid gameId)
         {
             if (gameId == Guid.Empty)
-            { throw new ArgumentException("Game ID cannot be empty.", nameof(gameId)); }
+            {
+                throw new ArgumentException("Game ID cannot be empty.", nameof(gameId));
+            }
 
             return this._gameRepository.GetGameById(gameId);
         }

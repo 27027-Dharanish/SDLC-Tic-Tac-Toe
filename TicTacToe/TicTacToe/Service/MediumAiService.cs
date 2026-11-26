@@ -4,9 +4,7 @@ using System.Collections.Generic;
 namespace TicTacToe.Core.Service
 {
     /// <summary>
-    /// Provides the computer move selection strategy for Medium mode by alternating
-    /// between <see cref="EasyAiService"/> (first move) and <see cref="HardAiService"/> (next move)
-    /// for a balanced 50/50 difficulty mix.
+    /// Provides the computer move selection strategy for Medium mode.
     /// </summary>
     public class MediumAiService
     {
@@ -17,8 +15,8 @@ namespace TicTacToe.Core.Service
         /// <summary>
         /// Initializes a new instance of the <see cref="MediumAiService"/> class.
         /// </summary>
-        /// <param name="easyAiService">The Easy AI service used for alternating casual moves.</param>
-        /// <param name="hardAiService">The Hard AI service used for alternating optimal moves.</param>
+        /// <param name="easyAiService">The Easy AI service.</param>
+        /// <param name="hardAiService">The Hard AI service.</param>
         public MediumAiService(EasyAiService easyAiService, HardAiService hardAiService)
         {
             this._easyAiService = easyAiService ?? throw new ArgumentNullException(nameof(easyAiService));
@@ -44,10 +42,7 @@ namespace TicTacToe.Core.Service
             int move = this._useEasyNext
                 ? this._easyAiService.GetNextMove(board, humanSymbol)
                 : this._hardAiService.GetNextMove(board, humanSymbol);
-
-            // Flip flag so the next computer turn uses the opposite AI algorithm (50/50 alternation)
             this._useEasyNext = !this._useEasyNext;
-
             return move;
         }
 

@@ -39,19 +39,5 @@ namespace TicTacToe.Core.Repository
         /// </summary>
         /// <param name="user">The <see cref="User"/> entity to add.</param>
         void Add(User user);
-
-        /// <summary>
-        /// Updates an existing user's details in the data store.
-        /// </summary>
-        /// <param name="updatedUser">The <see cref="User"/> entity containing updated information.</param>
-        /// <returns><c>true</c> if the user was found and updated; otherwise, <c>false</c>.</returns>
-        bool Update(User updatedUser);
-
-        /// <summary>
-        /// Deletes a user from the data store by their unique identifier.
-        /// </summary>
-        /// <param name="userId">The unique identifier of the user to delete.</param>
-        /// <returns><c>true</c> if the user was found and deleted; otherwise, <c>false</c>.</returns>
-        bool Delete(Guid userId);
     }
 }

@@ -5,7 +5,7 @@ using TicTacToe.Core.Model;
 namespace TicTacToe.Core.Repository
 {
     /// <summary>
-    /// Handles persistence and retrieval of <see cref="GameRecord"/> match history data using JSON storage.
+    /// Handles persistence and retrieval of match history.
     /// </summary>
     public class GameRepository
     {
@@ -18,22 +18,8 @@ namespace TicTacToe.Core.Repository
         /// Initializes a new instance of the <see cref="GameRepository"/> class with the default storage path.
         /// </summary>
         public GameRepository()
-            : this(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "games.json"))
         {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GameRepository"/> class with a custom JSON file path.
-        /// </summary>
-        /// <param name="filePath">The path to the JSON file used for storing game records.</param>
-        public GameRepository(string filePath)
-        {
-            if (string.IsNullOrWhiteSpace(filePath))
-            {
-                throw new ArgumentException("File path cannot be empty.", nameof(filePath));
-            }
-
-            this._filePath = filePath;
+            this._filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "games.json");
         }
 
         /// <summary>

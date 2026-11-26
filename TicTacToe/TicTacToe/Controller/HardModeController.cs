@@ -12,8 +12,7 @@ using TicTacToe.View;
 namespace TicTacToe.Controller
 {
     /// <summary>
-    /// Handles Hard (Impossible) mode gameplay interactions, random symbol assignment,
-    /// board rendering, and match persistence.
+    /// Handles Hard (Impossible) mode gameplay.
     /// </summary>
     public class HardModeController
     {
@@ -91,11 +90,17 @@ namespace TicTacToe.Controller
             while (true)
             {
                 this.RenderBoardWithScoreboard(board, currentUser.UserName, userSymbol, aiSymbol, currentTurn);
-
                 int chosenPosition;
                 if (currentTurn == userSymbol)
                 {
-                    chosenPosition = this.GetUserMove(board);
+                    int? userMove = this.GetUserMove(board);
+                    if (userMove == null)
+                    {
+                        ConsoleActivity.PrintInvalidMessage("Match quit. Returning to mode menu...");
+                        return;
+                    }
+
+                    chosenPosition = userMove.Value;
                 }
                 else
                 {
@@ -169,7 +174,6 @@ namespace TicTacToe.Controller
         private char AssignRandomUserSymbol(string userName)
         {
             ConsoleActivity.ShowHeader("HARD MODE - RANDOM SYMBOL DRAW");
-
             char assignedSymbol = this._random.Next(2) == 0 ? 'X' : 'O';
             string turnOrderNote = assignedSymbol == 'X'
                 ? "You play first!"
@@ -182,20 +186,25 @@ namespace TicTacToe.Controller
         }
 
         /// <summary>
-        /// Prompts the user to select an unoccupied position (1 to 9) using arrow keys.
+        /// Prompts the user to select an unoccupied position or press <c>Q</c> to quit the match.
         /// </summary>
         /// <param name="board">The current 9-cell board state.</param>
-        /// <returns>The selected 1-based position.</returns>
-        private int GetUserMove(char[] board)
+        /// <returns>The chosen 1-based position, or <see langword="null"/> if the user quit.</returns>
+        private int? GetUserMove(char[] board)
         {
             string[] choices = this._hardAiService
                 .GetAvailablePositions(board)
                 .Select(pos => $"Position {pos}")
                 .ToArray();
 
-            string selected = ConsoleActivity.ShowSelectionMenu(
+            string? selected = ConsoleActivity.ShowMoveSelectionMenu(
                 "[bold green]Your turn! Select an available cell:[/]",
                 choices);
+
+            if (selected == null)
+            {
+                return null;
+            }
 
             return int.Parse(selected.Replace("Position ", string.Empty));
         }
