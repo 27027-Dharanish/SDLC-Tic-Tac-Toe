@@ -5,10 +5,15 @@ using TicTacToe.Core.Services;
 
 namespace Assignments
 {
+    /// <summary>
+    /// Represents the main entry point for the application and handles initial setup.
+    /// </summary>
     public class Program
     {
-        
-        public static void Main(string[] args)
+        /// <summary>
+        /// Main entry point of the program and start the controller
+        /// </summary>
+        public static void Main()
         {
             IUserRepository userRepository = new UserRepository();
             IUserManagementService userService = new UserService(userRepository);

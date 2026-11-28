@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Spectre.Console;
 using TicTacToe.Core.Constants;
@@ -12,8 +11,8 @@ using TicTacToe.View;
 namespace TicTacToe.Controller
 {
     /// <summary>
-    /// Handles Medium mode gameplay interactions, random symbol assignment,
-    /// alternating Easy/Hard AI turns, board rendering, and match persistence.
+    /// Handles Medium mode gameplay interactions, 2D board cursor navigation,
+    /// turn timer, random symbol assignment, alternating Easy/Hard AI turns, and match persistence.
     /// </summary>
     public class MediumModeController
     {
@@ -92,15 +91,34 @@ namespace TicTacToe.Controller
 
             while (true)
             {
-                this.RenderBoardWithScoreboard(board, currentUser.UserName, userSymbol, aiSymbol, currentTurn);
-
                 int chosenPosition;
                 if (currentTurn == userSymbol)
                 {
-                    int? userMove = this.GetUserMove(board);
+                    int? userMove = this.GetUserMove(board, currentUser.UserName, userSymbol, aiSymbol, currentTurn);
                     if (userMove == null)
                     {
                         ConsoleActivity.PrintInvalidMessage("Match quit. Returning to mode menu...");
+                        return;
+                    }
+
+                    if (userMove == -1)
+                    {
+                        winnerName = ComputerName;
+                        this._computerWins++;
+
+                        this.RenderBoardWithScoreboard(board, currentUser.UserName, userSymbol, aiSymbol, currentTurn);
+                        ConsoleActivity.PrintInvalidMessage($"Time's up! {ComputerName} wins the match by timeout!");
+                        if (moveHistory.Count > 0)
+                        {
+                            this._gameService.SaveMatch(
+                                currentUser.UserId,
+                                player1Name,
+                                player2Name,
+                                GameMode.Medium,
+                                winnerName,
+                                moveHistory.ToArray());
+                        }
+
                         return;
                     }
 
@@ -108,6 +126,7 @@ namespace TicTacToe.Controller
                 }
                 else
                 {
+                    this.RenderBoardWithScoreboard(board, currentUser.UserName, userSymbol, aiSymbol, currentTurn);
                     ConsoleActivity.PrintInConsole($"[yellow]{ComputerName} ({aiSymbol}) is thinking...[/]");
                     Thread.Sleep(500);
                     chosenPosition = this._mediumAiService.GetNextMove(board, userSymbol);
@@ -189,33 +208,27 @@ namespace TicTacToe.Controller
         }
 
         /// <summary>
-        /// Prompts the user to select an unoccupied position or press <c>Q</c> to quit the match.
+        /// Lets the user navigate directly inside the 3x3 board using arrow keys and press Enter to place their symbol.
         /// </summary>
-        /// <param name="board">The current 9-cell board state.</param>
-        /// <returns>The chosen 1-based position, or <see langword="null"/> if the user quit.</returns>
-        private int? GetUserMove(char[] board)
+        private int? GetUserMove(char[] board, string userName, char userSymbol, char aiSymbol, char currentTurn)
         {
-            string[] choices = this._mediumAiService
-                .GetAvailablePositions(board)
-                .Select(pos => $"Position {pos}")
-                .ToArray();
-
-            string? selected = ConsoleActivity.ShowMoveSelectionMenu(
-                "[bold green]Your turn! Select an available cell:[/]",
-                choices);
-
-            if (selected == null)
-            {
-                return null;
-            }
-
-            return int.Parse(selected.Replace("Position ", string.Empty));
+            return ConsoleActivity.SelectCellOnBoard(
+                board,
+                cursorIndex => this.RenderBoardWithScoreboard(board, userName, userSymbol, aiSymbol, currentTurn, cursorIndex),
+                "[bold green]Your turn! Move on the board and press Enter:[/]",
+                turnSeconds: 10);
         }
 
         /// <summary>
-        /// Renders the 3x3 game board panel alongside the live session scoreboard panel.
+        /// Renders the 3x3 game board panel (with optional cursor highlight) alongside the live session scoreboard panel.
         /// </summary>
-        private void RenderBoardWithScoreboard(char[] board, string userName, char userSymbol, char aiSymbol, char currentTurn)
+        private void RenderBoardWithScoreboard(
+            char[] board,
+            string userName,
+            char userSymbol,
+            char aiSymbol,
+            char currentTurn,
+            int highlightedIndex = -1)
         {
             ConsoleActivity.ShowHeader("MATCH - MEDIUM MODE");
 
@@ -232,12 +245,15 @@ namespace TicTacToe.Controller
 
             for (int row = 0; row < 3; row++)
             {
-                boardGrid.AddRow(
-                    FormatCell(board[row * 3]),
-                    FormatCell(board[(row * 3) + 1]),
-                    FormatCell(board[(row * 3) + 2]));
-            }
+                int i0 = row * 3;
+                int i1 = (row * 3) + 1;
+                int i2 = (row * 3) + 2;
 
+                boardGrid.AddRow(
+                    FormatCell(board[i0], i0 == highlightedIndex),
+                    FormatCell(board[i1], i1 == highlightedIndex),
+                    FormatCell(board[i2], i2 == highlightedIndex));
+            }
             var boardPanel = new Panel(Align.Center(boardGrid))
             {
                 Header = new PanelHeader("[bold cyan] GAME BOARD [/]", Justify.Center),
@@ -245,22 +261,18 @@ namespace TicTacToe.Controller
                 BorderStyle = new Style(Color.Cyan1),
                 Padding = new Padding(2, 1),
             };
-
             var scoreTable = new Table()
-                .Border(TableBorder.Simple)
-                .BorderColor(Color.Grey);
-
+            .Border(TableBorder.Simple)
+            .BorderColor(Color.Grey);
             scoreTable.AddColumn(new TableColumn("[bold]Player[/]").LeftAligned());
             scoreTable.AddColumn(new TableColumn("[bold]Symbol[/]").Centered());
             scoreTable.AddColumn(new TableColumn("[bold]Score[/]").RightAligned());
             scoreTable.AddRow($"[bold cyan]{Markup.Escape(userName)}[/]", $"[bold cyan]{userSymbol}[/]", $"[bold green]{this._userWins}[/]");
             scoreTable.AddRow($"[bold yellow]{ComputerName}[/]", $"[bold yellow]{aiSymbol}[/]", $"[bold red]{this._computerWins}[/]");
             scoreTable.AddRow("[grey]Draws[/]", "[grey]-[/]", $"[bold white]{this._draws}[/]");
-
             string turnIndicator = currentTurn == userSymbol
-                ? $"[bold green]▶ Your Turn ({userSymbol})[/]"
-                : $"[bold yellow]▶ {ComputerName}'s Turn ({aiSymbol})[/]";
-
+            ? $"[bold green]▶ Your Turn ({userSymbol})[/]"
+            : $"[bold yellow]▶ {ComputerName}'s Turn ({aiSymbol})[/]";
             var scoreboardPanel = new Panel(new Rows(scoreTable, new Text(string.Empty), new Markup(turnIndicator)))
             {
                 Header = new PanelHeader("[bold yellow] SESSION SCOREBOARD [/]", Justify.Center),
@@ -271,12 +283,18 @@ namespace TicTacToe.Controller
             AnsiConsole.Write(Align.Center(new Columns(boardPanel, scoreboardPanel) { Padding = new Padding(2, 0) }));
             ConsoleActivity.PrintEmptyLine();
         }
-
-        private static string FormatCell(char cell) => cell switch
+        private static string FormatCell(char cell, bool isHighlighted = false)
         {
-            'X' => "\n[bold cyan]X[/]\n",
-            'O' => "\n[bold yellow]O[/]\n",
-            _ => $"\n[dim grey]{cell}[/]\n",
-        };
+            if (isHighlighted)
+            {
+                return $"\n[black on green] {cell} [/]\n";
+            }
+            return cell switch
+            {
+                'X' => "\n[bold cyan]X[/]\n",
+                'O' => "\n[bold yellow]O[/]\n",
+                _ => $"\n[dim grey]{cell}[/]\n",
+            };
+        }
     }
 }

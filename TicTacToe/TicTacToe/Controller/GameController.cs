@@ -12,14 +12,14 @@ namespace TicTacToe.Controller
     /// </summary>
     public class GameController
     {
-        private const string OptionPlayNewGame = "Play New Game";
-        private const string OptionWatchReplay = "Watch Replay";
-        private const string OptionLogOut = "Log Out";
+        private const string OptionPlayNewGame = "Play new game";
+        private const string OptionWatchReplay = "Watch replay";
+        private const string OptionLogOut = "Log out";
         private const string ModeEasy = "Easy (AI - Casual)";
         private const string ModeMedium = "Medium (AI - Balanced)";
         private const string ModeImpossible = "Impossible (AI - Unbeatable)";
         private const string ModeManual = "Manual (2 Players)";
-        private const string ModeBack = "Back to Lobby";
+        private const string ModeBack = "Back to lobby";
         private readonly GameService _gameService;
         private User? _currentUser;
 
@@ -57,11 +57,9 @@ namespace TicTacToe.Controller
             {
                 ConsoleActivity.ShowHeader("GAME LOBBY", "TIC TAC TOE");
                 this.ShowUserWelcomeBanner();
-
                 string choice = ConsoleActivity.ShowSelectionMenu(
                     "[bold cyan]Select an option using Up/Down arrow keys:[/]",
                     new[] { OptionPlayNewGame, OptionWatchReplay, OptionLogOut });
-
                 switch (choice)
                 {
                     case OptionPlayNewGame:
@@ -101,11 +99,9 @@ namespace TicTacToe.Controller
         {
             ConsoleActivity.ShowHeader("SELECT GAME MODE");
             this.ShowUserWelcomeBanner();
-
             string selectedMode = ConsoleActivity.ShowSelectionMenu(
                 "[bold cyan]Choose your gameplay mode:[/]",
                 new[] { ModeEasy, ModeMedium, ModeImpossible, ModeManual, ModeBack });
-
             switch (selectedMode)
             {
                 case ModeEasy:
@@ -136,18 +132,6 @@ namespace TicTacToe.Controller
                 case ModeBack:
                     return;
             }
-        }
-
-        /// <summary>
-        /// Launches a Tic-Tac-Toe match configured with the chosen <see cref="GameMode"/>.
-        /// </summary>
-        /// <param name="mode">The selected gameplay mode.</param>
-        private void StartMatch(GameMode mode)
-        {
-            ConsoleActivity.ShowHeader($"MATCH - {mode.ToString().ToUpper()}");
-            ConsoleActivity.PrintInConsole($"[green]Starting {mode} mode for [bold]{Markup.Escape(this._currentUser!.UserName)}[/]...[/]");
-            // Next step: Initialize GameSession, render Spectre.Console board, and execute turns
-            ConsoleActivity.WaitInConsole();
         }
 
         /// <summary>

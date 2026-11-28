@@ -1,4 +1,7 @@
-﻿using Spectre.Console;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Spectre.Console;
 using TicTacToe.Core.Constants;
 using TicTacToe.Core.Model;
 using TicTacToe.Core.Service;
@@ -13,7 +16,8 @@ namespace TicTacToe.Controller
     {
         private const string OptionPlayAgain = "Play Again";
         private const string OptionExitMode = "Exit Mode";
-
+        private const string TimerOptionLimited = "Limited Time (10 Seconds per Move)";
+        private const string TimerOptionUnlimited = "Unlimited Time";
         private readonly ManualGameService _manualGameService;
         private readonly GameService _gameService;
         private readonly Random _random = new Random();
@@ -46,6 +50,7 @@ namespace TicTacToe.Controller
 
             string player1Name = currentUser.UserName;
             string player2Name = this.PromptPlayer2Name(player1Name);
+            int? turnSeconds = this.PromptTurnTimeLimit();
 
             this.ResetScoreboard();
 
@@ -54,7 +59,7 @@ namespace TicTacToe.Controller
                 string choice;
                 do
                 {
-                    this.PlaySingleRound(currentUser, player1Name, player2Name);
+                    this.PlaySingleRound(currentUser, player1Name, player2Name, turnSeconds);
                     choice = ConsoleActivity.ShowSelectionMenu(
                         "[bold cyan]Match finished! What would you like to do next?[/]",
                         new[] { OptionPlayAgain, OptionExitMode });
@@ -68,9 +73,23 @@ namespace TicTacToe.Controller
         }
 
         /// <summary>
+        /// Asks the players whether they want a 10-second turn timer or unlimited thinking time.
+        /// </summary>
+        /// <returns><c>10</c> for limited time, or <see langword="null"/> for unlimited time.</returns>
+        private int? PromptTurnTimeLimit()
+        {
+            ConsoleActivity.ShowHeader("MANUAL MODE - TIMER SETTINGS");
+            string choice = ConsoleActivity.ShowSelectionMenu(
+                "[bold cyan]Select turn timer mode:[/]",
+                new[] { TimerOptionLimited, TimerOptionUnlimited });
+
+            return choice == TimerOptionLimited ? 10 : null;
+        }
+
+        /// <summary>
         /// Executes a single round of 2-player Tic-Tac-Toe and saves the match record.
         /// </summary>
-        private void PlaySingleRound(User currentUser, string player1Name, string player2Name)
+        private void PlaySingleRound(User currentUser, string player1Name, string player2Name, int? turnSeconds)
         {
             char player1Symbol = this.AssignRandomSymbols(player1Name, player2Name);
             char player2Symbol = player1Symbol == 'X' ? 'O' : 'X';
@@ -78,6 +97,7 @@ namespace TicTacToe.Controller
             // 'X' is always saved as player1Name in match history so replay order matches turn order
             string xPlayerName = player1Symbol == 'X' ? player1Name : player2Name;
             string oPlayerName = player1Symbol == 'O' ? player1Name : player2Name;
+
             char[] board = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
             var moveHistory = new List<int>();
             char currentTurn = 'X';
@@ -96,7 +116,53 @@ namespace TicTacToe.Controller
                     activePlayerName,
                     currentTurn);
 
-                int chosenPosition = this.GetPlayerMove(board, activePlayerName, currentTurn);
+                int? playerMove = this.GetPlayerMove(board, activePlayerName, currentTurn, turnSeconds);
+                if (playerMove == null)
+                {
+                    ConsoleActivity.PrintInvalidMessage($"{activePlayerName} quit the match.");
+                    return;
+                }
+
+                if (playerMove == -1)
+                {
+                    bool isPlayer1TimedOut = currentTurn == player1Symbol;
+                    winnerName = isPlayer1TimedOut ? player2Name : player1Name;
+
+                    if (isPlayer1TimedOut)
+                    {
+                        this._player2Wins++;
+                    }
+                    else
+                    {
+                        this._player1Wins++;
+                    }
+
+                    this.RenderBoardWithScoreboard(
+                        board,
+                        player1Name,
+                        player2Name,
+                        player1Symbol,
+                        player2Symbol,
+                        activePlayerName,
+                        currentTurn);
+
+                    ConsoleActivity.PrintInvalidMessage($"Time's up for {activePlayerName}! {winnerName} wins the match by timeout!");
+
+                    if (moveHistory.Count > 0)
+                    {
+                        this._gameService.SaveMatch(
+                            currentUser.UserId,
+                            xPlayerName,
+                            oPlayerName,
+                            GameMode.Manual,
+                            winnerName,
+                            moveHistory.ToArray());
+                    }
+
+                    return;
+                }
+
+                int chosenPosition = playerMove.Value;
                 board[chosenPosition - 1] = currentTurn;
                 moveHistory.Add(chosenPosition);
 
@@ -195,68 +261,62 @@ namespace TicTacToe.Controller
         private char AssignRandomSymbols(string player1Name, string player2Name)
         {
             ConsoleActivity.ShowHeader("MANUAL MODE - SYMBOL DRAW");
-
             char p1Symbol = this._random.Next(2) == 0 ? 'X' : 'O';
             char p2Symbol = p1Symbol == 'X' ? 'O' : 'X';
             string firstMover = p1Symbol == 'X' ? player1Name : player2Name;
-
             ConsoleActivity.PrintSuccessMessage(
-                $"{player1Name} is '{p1Symbol}' | {player2Name} is '{p2Symbol}'. {firstMover} (X) moves first!");
-
+            $"{player1Name} is '{p1Symbol}' | {player2Name} is '{p2Symbol}'. {firstMover} (X) moves first!");
             return p1Symbol;
         }
 
-        /// <summary>
-        /// Prompts the active human player to select an unoccupied position (1 to 9).
-        /// </summary>
-        private int GetPlayerMove(char[] board, string activePlayerName, char activeSymbol)
+        private int? GetPlayerMove(char[] board, string activePlayerName, char activeSymbol, int? turnSeconds)
         {
             string[] choices = this._manualGameService
-                .GetAvailablePositions(board)
-                .Select(pos => $"Position {pos}")
-                .ToArray();
-
+            .GetAvailablePositions(board)
+            .Select(pos => $"Position {pos}")
+            .ToArray();
             string color = activeSymbol == 'X' ? "cyan" : "yellow";
-            string selected = ConsoleActivity.ShowSelectionMenu(
-                $"[bold {color}]{Markup.Escape(activePlayerName)} ({activeSymbol})[/] - Select an available cell:",
-                choices);
-
+            string prompt = $"[bold {color}]{Markup.Escape(activePlayerName)} ({activeSymbol})[/] - Select an available cell:";
+            string? selected = turnSeconds.HasValue
+            ? ConsoleActivity.ShowTimedMoveSelectionMenu(prompt, choices, turnSeconds.Value)
+            : ConsoleActivity.ShowMoveSelectionMenu(prompt, choices);
+            if (selected == null)
+            {
+                return null;
+            }
+            if (selected == "TIMEOUT")
+            {
+                return -1;
+            }
             return int.Parse(selected.Replace("Position ", string.Empty));
         }
 
-        /// <summary>
-        /// Renders the 3x3 game board panel alongside the live 2-player session scoreboard panel.
-        /// </summary>
         private void RenderBoardWithScoreboard(
-            char[] board,
-            string player1Name,
-            string player2Name,
-            char player1Symbol,
-            char player2Symbol,
-            string activePlayerName,
-            char currentTurn)
+        char[] board,
+        string player1Name,
+        string player2Name,
+        char player1Symbol,
+        char player2Symbol,
+        string activePlayerName,
+        char currentTurn)
         {
             ConsoleActivity.ShowHeader("MATCH - MANUAL MODE (2 PLAYERS)");
-
             var boardGrid = new Table()
-                .Border(TableBorder.Heavy)
-                .BorderColor(Color.Cyan1)
-                .ShowRowSeparators()
-                .HideHeaders();
-
+            .Border(TableBorder.Heavy)
+            .BorderColor(Color.Cyan1)
+            .ShowRowSeparators()
+            .HideHeaders();
             for (int i = 0; i < 3; i++)
             {
                 boardGrid.AddColumn(new TableColumn(string.Empty).Centered().Width(7));
             }
-
             for (int row = 0; row < 3; row++)
             {
                 boardGrid.AddRow(
-                    FormatCell(board[row * 3]),
-                    FormatCell(board[(row * 3) + 1]),
-                    FormatCell(board[(row * 3) + 2]));
+                FormatCell(board[row * 3]),
+                FormatCell(board[(row * 3) + 1]),
+                FormatCell(board[(row * 3) + 2]));
             }
-
             var boardPanel = new Panel(Align.Center(boardGrid))
             {
                 Header = new PanelHeader("[bold cyan] GAME BOARD [/]", Justify.Center),
